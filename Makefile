@@ -19,12 +19,13 @@ UV           = $(shell command -v uv 2>/dev/null || echo $(HOME)/.local/bin/uv)
 SWIFT_SRC   := $(shell find Sources -name '*.swift' -type f | sort)
 
 .DEFAULT_GOAL := help
-.PHONY: build test help install check uv app run selftest update uninstall clean clean-models installed-check
+.PHONY: FORCE doctor build test help install check uv app run selftest update uninstall clean clean-models installed-check
 
 help:
 	@echo "fast-whisper - dictation for Apple Silicon Macs"
 	@echo ""
 	@echo "  make install      set up Python, whisper.cpp, models (~6 GB) and install to $(INSTALL_DIR)"
+	@echo "  make doctor       check Swift compiler, SDK and macro plugins"
 	@echo "  make build        build the .app without installing"
 	@echo "  make test         run fast tests without models or microphone"
 	@echo "  make app          rebuild and reinstall the application only"
@@ -75,7 +76,16 @@ models/.ready: backend/models.py .venv/.deps
 
 # ---------------------------------------------------------------- Application
 
-$(APP_BIN): $(SWIFT_SRC) scripts/build_app.sh
+# Recheck toolchain selection on every build; change the stamp only when it changes.
+FORCE:
+
+build/swift-toolchain.stamp: FORCE scripts/check_swift.sh scripts/swift_toolchain.sh scripts/probes/SwiftUIState.swift
+	@scripts/check_swift.sh --stamp
+
+doctor:
+	@scripts/check_swift.sh
+
+$(APP_BIN): $(SWIFT_SRC) scripts/build_app.sh scripts/swift_toolchain.sh build/swift-toolchain.stamp
 	@echo "→ Building the application (swiftc)"
 	@scripts/build_app.sh
 

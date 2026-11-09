@@ -14,6 +14,7 @@ Read `docs/architecture.md` before changing boundaries or the worker protocol.
 | Microphone, resampling, pause detection, WAV segments | `Sources/Audio/AudioRecorder.swift` |
 | Python processes, JSON requests, progress, process memory | `Sources/Backend/ModelProcess.swift` |
 | Settings and replacement dictionary | `Sources/Settings/Settings.swift` |
+| Transient shortcut editor state | `Sources/Settings/ShortcutCaptureState.swift` |
 | Global shortcut, microphone permissions, system paste | `Sources/Platform/` |
 | Windows, transcript rendering, overlay | `Sources/UI/` |
 | End-to-end synthetic speech test | `Sources/Diagnostics/SelfTest.swift` |
@@ -41,6 +42,10 @@ Read `docs/architecture.md` before changing boundaries or the worker protocol.
   thin; implementation belongs in the package. `python -m backend` is equivalent.
 - Worker stdout is exclusively JSON lines. Native/model logs belong on stderr.
   Request IDs and existing message fields are a cross-language contract.
+- Keep settings-window state in `ShortcutCaptureState` with `@StateObject`. Newer
+  SDKs implement `@State` as a macro requiring SwiftUIMacros, which may be absent
+  in Command Line Tools installations. Extend the SwiftUI probe when changing
+  state ownership or introducing macros. See `docs/build-troubleshooting.md`.
 - Preserve raw ASR fallback when correction fails the guard.
 - Preserve separate ASR/LLM process lifetimes (load/unload and memory reporting).
 - No model/runtime/generated files in source changes. Do not edit `.venv/`,
@@ -49,6 +54,7 @@ Read `docs/architecture.md` before changing boundaries or the worker protocol.
 ## Verify
 
 - `make test`: fast Python boundary tests, no model dependencies or downloads.
+- `make doctor`: validate the selected Apple compiler, SDK, plugins and SwiftUI bindings.
 - `make build`: compile and sign the macOS app without installing or launching it.
 - `make selftest` / `make selftest SELFTEST_LANG=ru`: optional real model pipeline;
   requires installed dependencies, downloaded models and a working macOS session.

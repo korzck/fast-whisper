@@ -6,24 +6,22 @@ import AppKit
 struct SettingsView: View {
     @ObservedObject var settings: Settings
     @ObservedObject var state: AppState
-    @State private var capturing = false
-    @State private var monitor: Any?
-    @State private var hint = ""
+    @StateObject private var capture = ShortcutCaptureState()
 
     var body: some View {
         Form {
             Section("Горячая клавиша") {
                 HStack {
-                    Text(capturing ? "Нажмите сочетание…" : settings.hotKeyDisplay)
+                    Text(capture.capturing ? "Нажмите сочетание…" : settings.hotKeyDisplay)
                         .font(.system(.title3, design: .rounded)).monospaced()
                         .padding(.horizontal, 10).padding(.vertical, 4)
                         .background(RoundedRectangle(cornerRadius: 6).fill(Color(nsColor: .controlBackgroundColor)))
-                    Button(capturing ? "Отмена" : "Изменить") { capturing ? endCapture() : beginCapture() }
+                    Button(capture.capturing ? "Отмена" : "Изменить") { capture.capturing ? endCapture() : beginCapture() }
                     Spacer()
                 }
-                Text(hint.isEmpty ? "Первое нажатие начинает запись, второе — останавливает. Нужен хотя бы один модификатор (⌃ ⌥ ⇧ ⌘) или F-клавиша."
-                                  : hint)
-                    .font(.caption).foregroundStyle(hint.isEmpty ? Color.secondary : Color.red)
+                Text(capture.hint.isEmpty ? "Первое нажатие начинает запись, второе — останавливает. Нужен хотя бы один модификатор (⌃ ⌥ ⇧ ⌘) или F-клавиша."
+                                  : capture.hint)
+                    .font(.caption).foregroundStyle(capture.hint.isEmpty ? Color.secondary : Color.red)
             }
             Section("Язык распознавания") {
                 Picker("Язык", selection: $settings.language) {
@@ -92,13 +90,13 @@ struct SettingsView: View {
     }
 
     private func beginCapture() {
-        capturing = true; hint = ""
+        capture.capturing = true; capture.hint = ""
         HotKey.shared.unregister()   // Allow capturing the current shortcut too.
-        monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { e in
+        capture.monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { e in
             let mods = HotKey.carbonModifiers(e.modifierFlags)
             if e.keyCode == 53 && mods == 0 { endCapture(); return nil }   // Esc cancels capture.
             guard mods != 0 || HotKey.isFunctionKey(e.keyCode) else {
-                hint = "Добавьте модификатор: ⌃, ⌥, ⇧ или ⌘."
+                capture.hint = "Добавьте модификатор: ⌃, ⌥, ⇧ или ⌘."
                 return nil
             }
             settings.hotKeyCode = UInt32(e.keyCode)
@@ -110,11 +108,11 @@ struct SettingsView: View {
     }
 
     private func endCapture() {
-        if let monitor { NSEvent.removeMonitor(monitor) }
-        monitor = nil
-        capturing = false
+        if let monitor = capture.monitor { NSEvent.removeMonitor(monitor) }
+        capture.monitor = nil
+        capture.capturing = false
         if !HotKey.shared.register(keyCode: settings.hotKeyCode, modifiers: settings.hotKeyMods) {
-            hint = "Это сочетание занято системой или другим приложением — выберите другое."
+            capture.hint = "Это сочетание занято системой или другим приложением — выберите другое."
         }
         AppDelegate.shared?.refreshStatusItem()
     }

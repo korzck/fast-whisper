@@ -17,10 +17,10 @@ fi
 ver="$(sw_vers -productVersion)"
 if [ "${ver%%.*}" -ge 14 ]; then ok "macOS $ver"; else err "Requires macOS 14 Sonoma or later (current: $ver)"; fi
 
-if xcode-select -p >/dev/null 2>&1 && command -v swiftc >/dev/null 2>&1; then
-  ok "Command Line Tools ($(swiftc --version 2>/dev/null | head -1 | sed 's/.*Swift version \([0-9.]*\).*/Swift \1/'))"
+if "$(dirname "$0")/check_swift.sh"; then
+  ok "Swift compiler, SDK and SwiftUI macro preflight"
 else
-  err "Command Line Tools missing. Install with: xcode-select --install"
+  err "No compatible SwiftUI developer tools found (see diagnostics above)"
 fi
 
 ram=$(( $(sysctl -n hw.memsize) / 1073741824 ))

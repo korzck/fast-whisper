@@ -8,15 +8,17 @@ ROOT="$(pwd)"
 APP="build/fast-whisper.app"
 BUNDLE_ID="com.fastwhisper.app"
 
+source scripts/swift_toolchain.sh
+fw_select_swift_toolchain
+fw_print_swift_toolchain
+
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 
 SOURCES=()
 while IFS= read -r source; do SOURCES+=("$source"); done < <(find Sources -name '*.swift' -type f | sort)
 
-swiftc -O -swift-version 5 -module-cache-path build/ModuleCache \
-  -target arm64-apple-macos14.0 \
-  -sdk "$(xcrun --show-sdk-path)" \
+"$FW_SWIFTC" -O "${FW_SWIFT_FLAGS[@]}" ${FW_SWIFT_PLUGIN_FLAGS[@]+"${FW_SWIFT_PLUGIN_FLAGS[@]}"} \
   -framework AppKit -framework SwiftUI -framework AVFoundation -framework Carbon \
   "${SOURCES[@]}" -o "$APP/Contents/MacOS/fast-whisper"
 

@@ -5,6 +5,7 @@ Gemma correction, a global keyboard shortcut, and pasting into the active field.
 
 ```sh
 make install                   # Set up the environment, models and app (~6 GB initially)
+make doctor                    # Check Swift compiler, SDK, plugins and SwiftUI bindings
 make build                     # Build and sign the .app without installing
 make app                       # Build and install to ~/Applications
 make run                       # Launch the installed app
@@ -33,7 +34,7 @@ Run `make help` for maintenance commands.
 | `scripts` | App packaging, system checks and whisper.cpp installation |
 | `tests` | Fast backend boundary tests |
 
-[Agent guide](AGENTS.md) · [Architecture and protocol](docs/architecture.md)
+[Agent guide](AGENTS.md) · [Architecture and protocol](docs/architecture.md) · [Build troubleshooting](docs/build-troubleshooting.md)
 
 The app uses `.venv` and models from the project directory: this is a local
 installation, not a portable standalone `.app`. Keep the project directory in

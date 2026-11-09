@@ -37,7 +37,9 @@ AppDelegate / HotKey / MainView
 completion and paste timing. `AudioRecorder` handles capture/resampling and
 segments; it does not invoke models. `ModelProcess` owns one child process and
 pending callbacks; it does not contain recognition rules. Views observe state.
-`Settings` persists preferences in UserDefaults. Platform adapters handle Carbon,
+`Settings` persists preferences in UserDefaults. `ShortcutCaptureState` holds only
+transient editor state through `@StateObject`, avoiding the newer `@State` macro
+plugin dependency in Command Line Tools-only installations. Platform adapters handle Carbon,
 Accessibility, clipboard events and microphone permissions.
 
 Python modules have narrow boundaries:
@@ -78,6 +80,13 @@ prints to model code. Change both Swift parsing and Python tests when changing
 this contract. User text is correction data, not an instruction to the model.
 
 ## Build and runtime files
+
+`make doctor` and build preflight select the compiler and macOS SDK through the
+same `xcrun` developer directory, discover platform/toolchain macro paths, and
+typecheck `scripts/probes/SwiftUIState.swift`. If the default installation fails,
+an installed Xcode is tried; explicit `DEVELOPER_DIR` choices are respected.
+Module caches are separated by toolchain/SDK identity and a changing toolchain
+stamp triggers rebuilding. See `docs/build-troubleshooting.md`.
 
 `make build` compiles all `Sources/**/*.swift` with `swiftc`, creates the plist
 and signs `build/fast-whisper.app`. No Xcode project or Swift package is required.
